@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'presstore/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = 'presSTORE'
+  spec.name          = 'presstore'
   spec.version       = PresSTORE::VERSION
   spec.authors       = ['John Whitson']
   spec.email         = ['john.whitson@gmail.com']
