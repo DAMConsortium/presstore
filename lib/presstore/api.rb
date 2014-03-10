@@ -198,6 +198,52 @@ module PresSTORE
       command('ArchivePlan', 'names')
     end
 
+    def archive_entry_btime(name)
+      cmd_line = "#{@nsdchat} -c ArchiveEntry {#{escape_path(name)}} btime"
+      response = execute(cmd_line)
+      stdout = response[:stdout]
+      return false unless response[:success] and !stdout.empty?
+
+      stdout
+    end
+
+    def archive_entry_meta(name)
+      cmd_line = "#{@nsdchat} -c ArchiveEntry {#{escape_path(name)}} meta"
+      response = execute(cmd_line)
+      stdout = response[:stdout]
+      return false unless response[:success] and !stdout.empty?
+
+      stdout
+    end
+
+    def archive_entry_mtime(name)
+      cmd_line = "#{@nsdchat} -c ArchiveEntry {#{escape_path(name)}} status"
+      response = execute(cmd_line)
+      stdout = response[:stdout]
+      return false unless response[:success] and !stdout.empty?
+
+      stdout
+    end
+
+    def archive_entry_size(name)
+      cmd_line = "#{@nsdchat} -c ArchiveEntry {#{escape_path(name)}} status"
+      response = execute(cmd_line)
+      stdout = response[:stdout]
+      return false unless response[:success] and !stdout.empty?
+
+      stdout
+    end
+
+    def archive_entry_status(name)
+      cmd_line = "#{@nsdchat} -c ArchiveEntry {#{escape_path(name)}} status"
+      response = execute(cmd_line)
+      stdout = response[:stdout]
+      return false unless response[:success] and !stdout.empty?
+
+      stdout
+    end
+
+
     ##### ARCHIVE METHODS #####
 
 
