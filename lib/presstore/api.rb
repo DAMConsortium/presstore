@@ -34,10 +34,13 @@ module PresSTORE
     # @option params [String] :presstore_server_address ('localhost:9001')
     # @option params [Boolean] :use_ssh (false)
     # @option params [Hash] :ssh_settings { hostname: 'localhost', username: 'username', password: 'password' }
+    # @option params [String] :default_archive_database_name ('Default-Archive') The name of the archive database to default to
     def initialize(params = {})
       params = params.dup
       @logger = params.delete(:logger) { Logger.new(STDOUT) }
       @initial_params = params.dup.freeze
+
+      @default_archive_database_name = params.delete(:default_archive_database_name) { DEFAULT_ARCHIVE_DATABASE_NAME }
       set_connection(params)
     end # initialize
 
@@ -376,7 +379,7 @@ module PresSTORE
     def archive_entry_handle(path, params = { })
       params = params.dup
       client_name = params.delete(:client_name) { DEFAULT_CLIENT_NAME }
-      database_name = params.delete(:database_name) { DEFAULT_ARCHIVE_DATABASE_NAME }
+      database_name = params.delete(:database_name) { @default_archive_database_name }
       set_connection(params)
       logger.debug { "Getting Entry Archive Handle for: #{path}"}
       cmd_line = "#{@nsdchat} -c ArchiveEntry handle #{client_name} {#{escape_path(path)}} #{database_name} "
