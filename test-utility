@@ -1,0 +1,74 @@
+#!/usr/bin/ruby
+
+#
+#
+# Created by Nicholas Stokes
+# XPlatform Consulting
+# 310-738-1454 cell
+# email: nick@xplatformconsulting.com
+# im: nicholasstokes@mac.com
+# jabber: nicholas.stokes@gmail.com
+# skype: nicholas.stokes-xplatform
+# twitter: xplatform2009
+# web: http://www.xplatformconsulting.com
+#
+#
+# Copyright (c) 2011 XPlatform Consulting
+# All rights reserved
+
+
+
+require 'rexml/document'
+require 'rexml/formatters/pretty'
+require 'getoptlong'
+require 'rubygems'
+require 'net/http'
+require 'uri'
+include REXML
+
+
+#Prestore Variables
+
+@archive_plan = '10001'
+@prestore_server_address = 'localhost'
+@nsdchat = '/usr/local/aw/bin/nsdchat -s awsock:/admin:password@10.10.87.219:9001'
+#@asset_full_path = '/Users/admin/Desktop/stomp.mov'
+@asset_full_path = '/Users/admin/Documents/XPlatform.pdf'
+
+
+def create_archive_selection()
+    
+puts "#{@nsdchat} -c ArchiveSelection create #{@prestore_server_address} #{@archive_plan}"
+@archive_selection = `#{@nsdchat} -c ArchiveSelection create #{@prestore_server_address} #{@archive_plan}`
+@archive_selection = @archive_selection.chomp
+puts "Archive: #{@archive_selection}"
+puts "\n"
+ 
+end
+create_archive_selection
+
+
+def add_archive_selection_entries()
+
+puts "#{@nsdchat} -c ArchiveSelection #{@archive_selection} addentry {#{@asset_full_path}}"
+@archive_selection_entries = `#{@nsdchat} -c ArchiveSelection #{@archive_selection} addentry {#{@asset_full_path}}`
+@archive_selection_entries = @archive_selection_entries.chomp
+puts "Archive Selection: #{@archive_selection_entries}"
+puts "\n"
+
+end
+add_archive_selection_entries
+
+
+def submit_archive_selection()
+
+puts "#{@nsdchat} -c ArchiveSelection #{@archive_selection} submit yes"
+@submit_selection = `#{@nsdchat} -c ArchiveSelection #{@archive_selection} submit yes`
+@submit_selection = @submit_selection.chomp
+puts "Submit Selection: #{@submit_selection}"
+puts "\n"
+
+end
+submit_archive_selection
+
+
