@@ -1,0 +1,92 @@
+#!/usr/bin/env ruby
+require 'logger'
+require 'optparse'
+
+ARGV << '--help' if ARGV.empty?
+
+DEFAULT_ARCHIVE_PLAN_ID = '10001'
+DEFAULT_CLIENT_NAME = 'localhost'
+DEFAULT_ARCHIVE_DATABASE_NAME = 'Default-Archive'
+
+DEFAULT_NSDCHAT_CMD_PATH = '/usr/local/aw/bin/nsdchat'
+DEFAULT_USERNAME = 'admin'
+DEFAULT_PASSWORD = 'password'
+DEFAULT_SERVER_ADDRESS = 'localhost:9001'
+
+@args = { }
+def args; @args end
+
+op = OptionParser.new
+op.on('--file-path PATH', Array, 'The path of the file to archive.') { |v| args[:asset_full_file_path] = v }
+op.on('--archive-plan-id ID', 'The archive plan id to archive with.', "\tdefault: #{DEFAULT_ARCHIVE_PLAN_ID}") { |v| args[:archive_plan_id] = v }
+op.on('--executable-path PATH', 'The path to the nsdchat executable.', "\tdefault: #{DEFAULT_NSDCHAT_CMD_PATH}") { |v| args[:nsdchat_cmd_path] = v }
+op.on('--username USERNAME', 'The username to authenticate with.', "\tdefault: #{DEFAULT_USERNAME}") { |v| args[:presstore_username] = v }
+op.on('--password PASSWORD', 'The password to authenticate with.', "\tdefault: #{DEFAULT_PASSWORD}") { |v| args[:presstore_password] = v }
+op.on('--server-address ADDRESS', 'The address and port of the presstore server', "\tdefault: #{DEFAULT_SERVER_ADDRESS}") { |v| args[:presstore_server_address] = v }
+op.on('--client-name NAME', 'The client name.', "\tdefault: #{DEFAULT_CLIENT_NAME}") { |v| args[:client_name] = v }
+op.on('--[no-]execute', 'Do not execute the commands.') { |v| args[:no_execute] = v }
+op.on('--help', 'Display this message.') { puts op; exit }
+op.parse!
+
+@nsdchat_cmd_path = args[:nsdchat_cmd_path] || DEFAULT_NSDCHAT_CMD_PATH
+@username = args[:presstore_username] || DEFAULT_USERNAME
+@password = args[:presstore_password] || DEFAULT_PASSWORD
+@server_address = args[:presstore_server_address] || DEFAULT_SERVER_ADDRESS
+@session = args[:presstore_session] || "UBIQUITY-#{`hostname`}-#{Time.now.to_i}"
+
+@nsdchat = %("#{@nsdchat_cmd_path}" -s awsock:/#{@username}:#{@password}:#{@session}@#{@server_address})
+@no_execute = args[:no_execute]
+def no_execute; @no_execute end
+
+@logger = Logger.new(STDERR)
+def logger; @logger end
+logger.level = Logger::DEBUG
+
+@client_name = args[:client_name] || DEFAULT_CLIENT_NAME
+def client_name; @client_name end
+
+@archive_plan_id = args[:archive_plan_id] || DEFAULT_ARCHIVE_PLAN_ID
+def archive_plan_id; @archive_plan_id end
+
+@asset_full_file_path = args[:asset_full_file_path]
+def asset_full_file_path; @asset_full_file_path end
+
+asset_full_file_path = (asset_full_file_path || [ ]) + ARGV unless ARGV.empty?
+abort("File path is a required argument.\n\n#{op}") unless asset_full_file_path and !asset_full_file_path.empty?
+
+asset_full_file_path.map! { |v| File.expand_path(v) rescue v }
+
+def execute(cmd_line)
+  logger.debug { "Executing: #{cmd_line}" }
+  return nil if no_execute
+
+  response = `#{cmd_line}`
+  logger.debug { "Response: #{response}"}
+  response
+end
+
+def escape_path(path)
+  path = path.dup
+  path.gsub!('{', '\{')
+  path.gsub!('}', '\}')
+  path.gsub!('&', '\\\&')
+  path
+end
+
+##### archive_begin
+logger.debug { "Creating ArchiveSelection. Client Name: #{client_name} Archive Plan ID: #{archive_plan_id}" }
+cmd_line = "#{@nsdchat} -c ArchiveSelection create #{client_name} #{archive_plan_id}"
+archive_selection_name = execute(cmd_line)
+
+###### Archive Selection Add Entry (archive_selection_add_entry)
+[*asset_full_file_path].each do |asset_full_file_path|
+  logger.debug { "Adding Entry to Archive Selection: Archive Selection Name: '#{archive_selection_name}' File Path: '#{asset_full_file_path}'" }
+  cmd_line = "#{@nsdchat} -c ArchiveSelection #{archive_selection_name} addentry {#{escape_path(asset_full_file_path)}}"
+  archive_entry_name = execute(cmd_line)
+end
+
+###### archive_selection_submit
+logger.debug { "Submitting ArchiveSelection. Archive Selection Name: '#{archive_selection_name}'" }
+cmd_line = "#{@nsdchat} -c ArchiveSelection #{archive_selection_name} submit yes"
+job_resource = execute(cmd_line)
+
