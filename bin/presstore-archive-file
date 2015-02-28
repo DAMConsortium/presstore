@@ -17,7 +17,8 @@ DEFAULT_SERVER_ADDRESS = 'localhost:9001'
 def args; @args end
 
 op = OptionParser.new
-op.on('--file-path PATH', Array, 'The path of the file to archive.') { |v| args[:asset_full_file_path] = v }
+# op.on('--file-path PATH', Array, 'The path of the file to archive.') { |v| args[:asset_full_file_path] = v }
+op.on('--file-path PATH', 'The path of the file to archive.') { |v| args[:asset_full_file_path] = v }
 op.on('--archive-plan-id ID', 'The archive plan id to archive with.', "\tdefault: #{DEFAULT_ARCHIVE_PLAN_ID}") { |v| args[:archive_plan_id] = v }
 op.on('--executable-path PATH', 'The path to the nsdchat executable.', "\tdefault: #{DEFAULT_NSDCHAT_CMD_PATH}") { |v| args[:nsdchat_cmd_path] = v }
 op.on('--username USERNAME', 'The username to authenticate with.', "\tdefault: #{DEFAULT_USERNAME}") { |v| args[:presstore_username] = v }
@@ -34,7 +35,7 @@ op.parse!
 @server_address = args[:presstore_server_address] || DEFAULT_SERVER_ADDRESS
 @session = args[:presstore_session] || "UBIQUITY-#{`hostname`}-#{Time.now.to_i}"
 
-@nsdchat = %("#{@nsdchat_cmd_path}" -s awsock:/#{@username}:#{@password}:#{@session}@#{@server_address})
+@nsdchat = %("#{@nsdchat_cmd_path}" -s awsock:/#{@username}:#{@password}#{@session ? ":#{@session}" : ''}@#{@server_address})
 @no_execute = args[:no_execute]
 def no_execute; @no_execute end
 
@@ -51,10 +52,11 @@ def archive_plan_id; @archive_plan_id end
 @asset_full_file_path = args[:asset_full_file_path]
 def asset_full_file_path; @asset_full_file_path end
 
-asset_full_file_path = (asset_full_file_path || [ ]) + ARGV unless ARGV.empty?
-abort("File path is a required argument.\n\n#{op}") unless asset_full_file_path and !asset_full_file_path.empty?
+# asset_full_file_path = (asset_full_file_path || [ ]) + ARGV unless ARGV.empty?
+# abort("File path is a required argument.\n\n#{op}") unless asset_full_file_path and !asset_full_file_path.empty?
+abort("File path is a required argument.\n\n#{op}") unless asset_full_file_path
 
-asset_full_file_path.map! { |v| File.expand_path(v) rescue v }
+# asset_full_file_path.map! { |v| File.expand_path(v) rescue v }
 
 def execute(cmd_line)
   logger.debug { "Executing: #{cmd_line}" }
@@ -79,11 +81,11 @@ cmd_line = "#{@nsdchat} -c ArchiveSelection create #{client_name} #{archive_plan
 archive_selection_name = execute(cmd_line)
 
 ###### Archive Selection Add Entry (archive_selection_add_entry)
-[*asset_full_file_path].each do |asset_full_file_path|
+# [*asset_full_file_path].each do |asset_full_file_path|
   logger.debug { "Adding Entry to Archive Selection: Archive Selection Name: '#{archive_selection_name}' File Path: '#{asset_full_file_path}'" }
   cmd_line = "#{@nsdchat} -c ArchiveSelection #{archive_selection_name} addentry {#{escape_path(asset_full_file_path)}}"
   archive_entry_name = execute(cmd_line)
-end
+# end
 
 ###### archive_selection_submit
 logger.debug { "Submitting ArchiveSelection. Archive Selection Name: '#{archive_selection_name}'" }
