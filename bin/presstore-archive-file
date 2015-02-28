@@ -12,6 +12,7 @@ DEFAULT_NSDCHAT_CMD_PATH = '/usr/local/aw/bin/nsdchat'
 DEFAULT_USERNAME = 'admin'
 DEFAULT_PASSWORD = 'password'
 DEFAULT_SERVER_ADDRESS = 'localhost:9001'
+DEFAULT_SESSION = "UBIQUITY-#{`hostname`}-#{Time.now.to_i}"
 
 @args = { }
 def args; @args end
@@ -26,6 +27,7 @@ op.on('--password PASSWORD', 'The password to authenticate with.', "\tdefault: #
 op.on('--server-address ADDRESS', 'The address and port of the presstore server', "\tdefault: #{DEFAULT_SERVER_ADDRESS}") { |v| args[:presstore_server_address] = v }
 op.on('--client-name NAME', 'The client name.', "\tdefault: #{DEFAULT_CLIENT_NAME}") { |v| args[:client_name] = v }
 op.on('--[no-]execute', 'Do not execute the commands.') { |v| args[:no_execute] = v }
+op.on('--[no-]session', 'The session to use when connecting remotely.', "\tdefault: #{DEFAULT_SESSION}") { |v| args[:presstore_session] = v }
 op.on('--help', 'Display this message.') { puts op; exit }
 op.parse!
 
@@ -33,7 +35,7 @@ op.parse!
 @username = args[:presstore_username] || DEFAULT_USERNAME
 @password = args[:presstore_password] || DEFAULT_PASSWORD
 @server_address = args[:presstore_server_address] || DEFAULT_SERVER_ADDRESS
-@session = args[:presstore_session] || "UBIQUITY-#{`hostname`}-#{Time.now.to_i}"
+@session = args.fetch(:presstore_session, DEFAULT_SESSION)
 
 @nsdchat = %("#{@nsdchat_cmd_path}" -s awsock:/#{@username}:#{@password}#{@session ? ":#{@session}" : ''}@#{@server_address})
 @no_execute = args[:no_execute]
